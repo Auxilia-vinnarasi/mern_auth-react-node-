@@ -1,7 +1,8 @@
 //using mongoose we can create schemas,and validate schemas
 
 const mongoose = require("mongoose");
-const bcrypt=require("bcryptjs");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const UserSchema = new mongoose.Schema({
   username: {
@@ -30,22 +31,26 @@ const UserSchema = new mongoose.Schema({
 //encrypt the password
 //we want to run before its get saved
 //which is rehashing which means saving the current password
-UserSchema.pre("save",async function(next){
-    if(!this.isModified("password")){
-      //if the password is not modified save the current password
-        next()
-    }
-    const salt=await bcrypt.genSalt(10);
-   this.password=await bcrypt.hash(this.password,salt);
-    next();
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    //if the password is not modified save the current password
+    next()
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 
 });
 
 //this function going to receive the password from the user and compare this with this.password
-UserSchema.methods.matchPasswords=async function(password){
-  return await bcrypt.compare(password,this.password)
+UserSchema.methods.matchPasswords = async function (password) {
+  return await bcrypt.compare(password, this.password)
 }
 
+//this function going to use jwt
+UserSchema.methods.getSignedToken = function () {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE })
+}
 
 const User = mongoose.model("User", UserSchema);
 

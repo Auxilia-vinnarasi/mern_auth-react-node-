@@ -1,5 +1,12 @@
-class errorResponse extends error{
-    constructor(message,statusCode){
+//Blue print for error response message
 
+class ErrorResponse extends Error{
+    constructor(message,statusCode){
+        super(message);
+        this.statusCode=statusCode
     }
 }
+
+module.exports=ErrorResponse;
+
+
