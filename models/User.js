@@ -1,5 +1,6 @@
 //using mongoose we can create schemas,and validate schemas
 
+var crypto=require("crypto");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -50,6 +51,15 @@ UserSchema.methods.matchPasswords = async function (password) {
 //this function going to use jwt
 UserSchema.methods.getSignedToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE })
+}
+
+//this function we are going to use resetpassword Token
+UserSchema.methods.getResetPasswordToken=function(){
+  const resetToken=crypto.randomBytes(20).toString("hex");
+  //hash this token save the hashed token there in above  ( resetPasswordToken: String, )
+  this.resetPasswordToken=crypto.createHash("sha256").update(resetToken).digest("hex");
+  this.resetPasswordExpire=Date.now() + 10 *(60 * 1000);//10*1 min  add it to the current Date
+  return resetToken;
 }
 
 const User = mongoose.model("User", UserSchema);

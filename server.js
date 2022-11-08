@@ -13,6 +13,7 @@ const app=express();
 app.use(express.json());
 
 app.use("/api/auth",require("./routes/auth"));
+app.use("/api/private",require("./routes/private"));
 
 //the middleware catch all the errors we passed to the next var
 //Error Handler (should be last piece of middleware);

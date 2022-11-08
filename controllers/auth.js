@@ -86,8 +86,41 @@ exports.login = async (req, res, next) => {
 //201-it signifies created status
 //200- it signifies ok
 
-exports.forgotPassword = (req, res, next) => {
-  res.send("forgotPassword route");
+exports.forgotPassword = async (req, res, next) => {
+  //we gonna get email from the body
+  const {email}=req.body;
+  //we have to find out this user in our db is existing or not
+  try{
+    const user=await User.findOne({email})
+    if(!user){
+      return next (new ErrorResponse("Email could not sent",404))
+    }
+    //so after finding the user we have to send the reset token;
+    const resetToken=user.getResetPasswordToken();
+    await user.save(); //To the data base its saved..
+
+    //this one is frontend domain..
+    const resetUrl=`http://localhost:3000/passwordreset/${resetToken}`;
+//this message go to the client
+//client will see that is where its gonna redirecting
+    const message=`
+    <h1>You have requested a password reset</h1>
+    <p>Please go to this link to reset your password</p>
+    <a href=${resetUrl} clicktracking=off>${resetUrl}</a>
+    `
+    //while we using (email service)sendGrid email notifications rerouting to weird email link 
+  
+    //after that we have to send mail here in try catch
+    try{
+      
+    }
+    catch(err){
+
+    }
+  }
+  catch(err){
+
+  }
 };
 
 exports.resetPassword = (req, res, next) => {
