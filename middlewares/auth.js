@@ -25,6 +25,10 @@ exports.protect=async (req,res,next)=>{
      try{
          const decoded=jwt.verify(token,process.env.JWT_SECRET)
          const user=await User.findById(decoded.id);
+         if(!user){
+            return next(new ErrorResponse("No user found in this id",404))
+         }
+         
          req.user=user;
       //we want to say to the controllers to run the next piece of controllers to run..
          next();

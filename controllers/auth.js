@@ -1,6 +1,9 @@
-const { JsonWebTokenError } = require("jsonwebtoken");
+
+const crypto=require("crypto");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const ErrorResponse = require("../utils/errorResponse");
+const sendEmail = require("../utils/sendEmail");
 
 
 // exports.register=(req,res,next)=>{
@@ -112,19 +115,58 @@ exports.forgotPassword = async (req, res, next) => {
   
     //after that we have to send mail here in try catch
     try{
-      
+      await sendEmail({
+        to:user.email,
+        subject:"password reset request",
+        text:message
+      })
+      return res.status(200).json({success:true,data:"Email sent"})
     }
     catch(err){
+      user.resetPasswordToken=undefined;
+      user.resetPasswordExpire=undefined;
 
+      await user.save();
+      return next(new ErrorResponse("Email could not be sent",500));
     }
   }
   catch(err){
-
+    next(err)
   }
 };
 
-exports.resetPassword = (req, res, next) => {
-  res.send("reset Password route");
+exports.resetPassword = async (req, res, next) => {
+  //res.send("reset Password route");
+  //we gonna recreate the reset token
+  //we gonna got it from req params
+  const resetPasswordToken=crypto.createHash("sha256").update(req.params.resetToken).digest("hex");
+  //now we recreated the pw
+  //so we have to search for the user that has same token in the document
+  //its gonna be a async funtion because we are gonna work with db
+  try{
+    const user=await User.findOne({
+      //we want to find following parameters..
+      resetPasswordToken:resetPasswordToken,
+      resetPasswordExpire:{$gt: Date.now()}
+      //the expiration date u saved under User is still greater than actual time now
+    })
+    if(!user){
+      return next (new ErrorResponse("Invalid Reset Token",400));
+    }
+    //if we get the user pass the pw we are going to send the new pw..
+    user.password=req.body.password;
+    user.resetPasswordToken=undefined;//we already used it we dont want to use it again 
+    user.resetPasswordExpire=undefined;
+
+    await user.save();
+    return res.status(201).json({
+      success:true,
+      data:"Password Reset Success"
+    })
+}
+catch(err){
+  next(err);
+}
 };
 
 //this sendtoken function will have access to the user,status code
